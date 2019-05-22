@@ -1,0 +1,52 @@
+int IN3 = 5 ;                                 //Variaveis da velocidade do motor
+int IN4 = 4 ;
+int velocidadeB = 6;
+float velocidade = 30;                        //Velocidade inicial do motor
+
+int pino_D0 = 3;                              //Variaveis da leitura do sensor de velocidade
+int rpm;
+volatile byte pulsos;
+unsigned long timeold;
+unsigned int pulsos_por_volta = 30;           //Seta numero de furos do disco
+
+void contador()                               //Contador de pulsos
+{
+  pulsos++;
+}
+
+void setup() {
+  pinMode(IN3,OUTPUT);
+  pinMode(IN4,OUTPUT);
+  pinMode(velocidadeB,OUTPUT);
+
+  Serial.begin(9600);
+  pinMode(pino_D0, INPUT);
+
+  attachInterrupt(1, contador, FALLING);
+  pulsos = 0;
+  rpm = 0;
+  timeold = 0; 
+}
+
+void loop() {
+  digitalWrite(IN3,HIGH);                                                       //Direção de rotação do motor
+  digitalWrite(IN4,LOW);
+  
+  while (velocidade < 100){                                                     //PMW do motor, velocidade max 255
+  analogWrite(velocidadeB,velocidade);
+  velocidade = velocidade + 5;
+  delay(20);
+  }
+  
+  if (millis() - timeold >= 1000)                                                //Atualiza contador a cada segundo
+  {
+    detachInterrupt(1);                                                          //Desabilita interrupcao durante o calculo
+    rpm = (60 * 1000 / pulsos_por_volta ) / (millis() - timeold) * pulsos;
+    timeold = millis();
+    pulsos = 0;
+    Serial.print("RPM = ");                                                      //Mostra o valor de RPM no serial monitor
+    Serial.println(rpm, DEC);
+    attachInterrupt(1, contador, FALLING);                                       //Habilita interrupcao
+  }
+
+}
